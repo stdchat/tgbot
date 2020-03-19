@@ -944,7 +944,7 @@ func (client *Client) enqueueSend(c tgbotapi.Chattable, isEdit bool, reqID strin
 	})
 }
 
-func (client *Client) Handler(tp service.Transporter, msg *stdchat.ChatMsg) {
+func (client *Client) Handler(msg *stdchat.ChatMsg) {
 	if msg.Network.ID == "" {
 		panic("network ID")
 	}
@@ -953,7 +953,7 @@ func (client *Client) Handler(tp service.Transporter, msg *stdchat.ChatMsg) {
 	case "msg", "msg/tgbot.sendMessage":
 		config, err := tgbotMsgConfig(msg, false)
 		if err != nil {
-			tp.PublishError(service.MakeID(msg.ID), msg.Network.ID, err)
+			client.tp.PublishError(service.MakeID(msg.ID), msg.Network.ID, err)
 		} else {
 			client.enqueueSend(config, false, msg.ID)
 		}
@@ -961,7 +961,7 @@ func (client *Client) Handler(tp service.Transporter, msg *stdchat.ChatMsg) {
 	case "msg/tgbot.sendSticker":
 		config, err := client.tgbotStickerConfig(msg, false)
 		if err != nil {
-			tp.PublishError(service.MakeID(msg.ID), msg.Network.ID, err)
+			client.tp.PublishError(service.MakeID(msg.ID), msg.Network.ID, err)
 		} else {
 			client.enqueueSend(config, false, msg.ID)
 		}
@@ -975,7 +975,7 @@ func (client *Client) Handler(tp service.Transporter, msg *stdchat.ChatMsg) {
 	//case "other/tgbot.leaveChat": // TODO: ...
 
 	default:
-		tp.PublishError(service.MakeID(msg.ID), msg.Network.ID,
+		client.tp.PublishError(service.MakeID(msg.ID), msg.Network.ID,
 			errors.New("unhandled message of type "+msg.Type))
 	}
 }
@@ -1015,7 +1015,7 @@ func (client *Client) enqueueRaw(method string, values url.Values, reqID string)
 	})
 }
 
-func (client *Client) CmdHandler(tp service.Transporter, msg *stdchat.CmdMsg) {
+func (client *Client) CmdHandler(msg *stdchat.CmdMsg) {
 	switch msg.Command {
 	case "raw":
 		if client.svc.CheckArgs(2, msg) {
@@ -1027,7 +1027,7 @@ func (client *Client) CmdHandler(tp service.Transporter, msg *stdchat.CmdMsg) {
 			}
 		}
 	default:
-		tp.PublishError(msg.ID, msg.Network.ID,
+		client.tp.PublishError(msg.ID, msg.Network.ID,
 			errors.New("unhandled command: "+msg.Command))
 	}
 }
